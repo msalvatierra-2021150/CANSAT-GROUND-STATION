@@ -33,7 +33,7 @@ def run_telemetry():
 
                     # Save & print
                     writer.writerow(row)
-                    #f.flush() # Force write to disk for crash safety
+                    f.flush() # Force write to disk for crash safety
                     print(f"Sample index {numeric_data[0]} saved")
 
     except serial.SerialException as e:
