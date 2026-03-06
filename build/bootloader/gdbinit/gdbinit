@@ -1,0 +1,2 @@
+source /home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader/gdbinit/symbols
+source /home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader/gdbinit/connect
