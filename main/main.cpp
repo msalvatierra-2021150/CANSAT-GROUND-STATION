@@ -84,7 +84,7 @@ void fsk_rx_task(void *arg) {
             if (pkt.magic1 == 0xCA && pkt.magic2 == 0xFE && pkt.version == 1) {
                 // Start identifier for python
                 // Evan added this so the python script ignores esp logs, etc.
-                printf("TELEMETRY,%u,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
+                printf("TLM,%u,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
                        pkt.count, radio->getRSSI(),
                        pkt.accelX, pkt.accelY, pkt.accelZ,
                        pkt.gyroX,  pkt.gyroY,  pkt.gyroZ,
