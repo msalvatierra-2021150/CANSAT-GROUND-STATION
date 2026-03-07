@@ -40,7 +40,7 @@ class TelemetryReceiverThread(QThread):
 
                     if self.use_simulation:
                         # SIMULATOR
-                        time.sleep(0.5) # Simulated data rate = 1/sleeptime
+                        time.sleep(2.5) # Simulated data rate = 1/sleeptime
                         self.sample_index += 1
                         
                         # Generate random fluctuating data
@@ -68,8 +68,15 @@ class TelemetryReceiverThread(QThread):
 
                     writer.writerow(row)
                     f.flush() 
-                    
-                    self.status_update.emit(f"Sample {numeric_data[0]} saved: Temp {numeric_data[-1]}°C")
+                    # Construct the formatted string for new data
+                    # row[0] = time, row[1] = #, row[2] = rssi, row[3] = ax, etc.
+                    formatted_msg = (
+                        f"#: {row[1]}    rssi: {row[2]}    "
+                        f"ax: {row[3]}    ay: {row[4]}    az: {row[5]}    "
+                        f"gx: {row[6]}    gy: {row[7]}    gz: {row[8]}    "
+                        f"alt: {row[9]}    temp: {row[10]}\n"
+                    )
+                    self.status_update.emit(formatted_msg)
                     self.data_received.emit(numeric_data)
 
             if ser: ser.close() # Close port if we were using the real thing
