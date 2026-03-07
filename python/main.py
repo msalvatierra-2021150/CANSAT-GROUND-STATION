@@ -3,9 +3,9 @@ import serial
 import csv
 import time
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QPlainTextEdit, QPushButton) # Added QHBoxLayout
+                             QHBoxLayout, QPlainTextEdit, QPushButton)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from SubmoduleThreads import TelemetryReceiverThread
+from TelemetryReceiver import TelemetryReceiverThread
 import pyqtgraph as pg 
 
 class GUIThread(QMainWindow):
@@ -42,14 +42,14 @@ class GUIThread(QMainWindow):
         self.line_graph1.showGrid(x=True, y=True, alpha=0.3) # Sets grid visibility & transparency
         
         # Axis labels for line_graph1
-        self.line_graph1.setLabel('left', 'Temperature', units='°C', color='#0a0a0a', size='12pt') # Configures Y-axis label
-        self.line_graph1.setLabel('bottom', 'Sample Index', color='#0a0a0a', size='12pt') # Configures X-axis label
+        self.line_graph1.setLabel('left', 'Temperature', units='°C', color='#0a0a0a', size='12pt') # y axis label
+        self.line_graph1.setLabel('bottom', 'Sample Index', color='#0a0a0a', size='12pt') # x axis label
         
         self.data_x = list(range(100))  
         self.data_y = [0] * 100         
         self.line = self.line_graph1.plot(self.data_x, self.data_y, pen=pg.mkPen(color='#00FF41', width=2))
         
-        self.right_v_layout.addWidget(self.line_graph1, 1) # Add to top-right with stretch factor 1
+        self.right_v_layout.addWidget(self.line_graph1, 1) # Add to top right corner, stretch factor 1
 
         """
         START TELEMETRY RECEIVER BUTTON (BOTTOM RIGHT EDGE OF SCREEN)
@@ -58,19 +58,26 @@ class GUIThread(QMainWindow):
         self.start_btn.setFixedHeight(50)
         self.start_btn.clicked.connect(self.start_telemetry)
         
-        self.right_v_layout.addWidget(self.start_btn, 1) # Add to bottom-right with stretch factor 1 to fill the quarter
+        self.right_v_layout.addWidget(self.start_btn, 1) # Add to bottom right, stretch factor 1
 
-        self.main_h_layout.addLayout(self.right_v_layout, 1) # Nest the right-side layout into the main horizontal layout
+        self.main_h_layout.addLayout(self.right_v_layout, 1) # Nest the right side layout into the main horizontal layout
 
-        self.telemetry_thread = TelemetryReceiverThread()
+        """
+        TELEMETRY RECEIVER SUBMODULE THREAD
+        """
+        # !!!!! Toggle simulation here !!!!!
+        self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) # !!!!! Turn of simulation here !!!!!
+        # Connect status signal to log terminal message box
         self.telemetry_thread.status_update.connect(self.add_log)
+        # Connect status signal to graph update function
+        # Lambda to pick the specific column to plot. Temp is column 10, index = column - 1 = 9
+        self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[9]))
 
     """
     GUI MAIN WINDOW METHODS
     """
     def start_telemetry(self):
         if not self.telemetry_thread.isRunning():
-            self.add_log("Starting Background Thread...")
             self.telemetry_thread.start()
             self.start_btn.setEnabled(False) 
 
