@@ -1,7 +1,7 @@
 import sys
-import serial
 import csv
 import time
+import re
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPlainTextEdit, QPushButton)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
@@ -82,8 +82,6 @@ class GUIThread(QMainWindow):
         self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) # !!!!! Turn of simulation here !!!!!
         # Connect status signal to log terminal message box
         self.telemetry_thread.status_update.connect(self.update_log)
-        # Connect status signal to telemetry log list
-        self.telemetry_thread.data_received.connect(self.telemetry_log.append)
         # Connect status signal to graph update function
         # Lambda to pick the specific column to plot. Temp is column 9, index = column - 1 = 8
         self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[8]))
@@ -96,9 +94,14 @@ class GUIThread(QMainWindow):
             self.start_btn.setEnabled(False) 
 
     def update_log(self, data):
-        # Save data to telemetry_log
-        self.telemetry_log.append(data)
-        # Convert row to string and print as a msg
+        if data != "Simulation mode! :)\n":
+            # Extract ONLY the numerical values after the colons for the CSV
+            # This looks for a colon, optional spaces, and then grabs the numbers
+            raw_values = re.findall(r':\s*([-\d.]+)', data)
+            if raw_values:
+                self.telemetry_log.append(raw_values)
+        
+        # Convert row to string and print as a msg to the GUI
         row_string = str(data)
         self.message_box.appendPlainText(f"{time.strftime('%H:%M:%S')}\n" + row_string)
         
@@ -106,6 +109,7 @@ class GUIThread(QMainWindow):
         self.message_box.verticalScrollBar().setValue(
             self.message_box.verticalScrollBar().maximum()
         )
+
     def update_graph(self, new_value):
         self.data_y = self.data_y[1:]  
         self.data_y.append(float(new_value))  
@@ -115,8 +119,11 @@ class GUIThread(QMainWindow):
         file_name = time.strftime('%H%M%S') + ".csv"
         with open(file_name, mode='w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["time", "#", "rssi", "ax", "ay", "az", "gx", "gy", "gz", "alt", "temp"])
-            writer.writerow(self.telemetry_log)
+            writer.writerow(["#", "rssi", "ax", "ay", "az", "gx", "gy", "gz", "alt", "temp"])
+            
+            # CRITICAL FIX: Use writerows (plural) to write the list of lists
+            writer.writerows(self.telemetry_log) 
+            
         self.message_box.appendPlainText("Telemetry log saved as " + file_name + " :-)\n")
 
     def keyPressEvent(self, event):
