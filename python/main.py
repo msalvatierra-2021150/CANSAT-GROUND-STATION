@@ -11,6 +11,8 @@ import pyqtgraph as pg
 class GUIThread(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Initialize empty telemetry log
+        self.telemetry_log = []
         self.showFullScreen()
 
         self.central_widget = QWidget()
@@ -63,16 +65,28 @@ class GUIThread(QMainWindow):
         self.main_h_layout.addLayout(self.right_v_layout, 1) # Nest the right side layout into the main horizontal layout
 
         """
+        SAVE TELEMETRY LOG BUTTON (BOTTOM RIGHT EDGE OF SCREEN)
+        """
+        self.save_log_btn = QPushButton("Save Telemetry Log")
+        self.save_log_btn.setFixedHeight(50)
+        self.save_log_btn.clicked.connect(self.save_log)
+        
+        self.right_v_layout.addWidget(self.save_log_btn, 1) # Add to bottom right, stretch factor 1
+
+        self.main_h_layout.addLayout(self.right_v_layout, 1) # Nest the right side layout into the main horizontal layout
+        
+        """
         TELEMETRY RECEIVER SUBMODULE THREAD
         """
         # !!!!! Toggle simulation here !!!!!
         self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) # !!!!! Turn of simulation here !!!!!
         # Connect status signal to log terminal message box
-        self.telemetry_thread.status_update.connect(self.add_log)
+        self.telemetry_thread.status_update.connect(self.update_log)
+        # Connect status signal to telemetry log list
+        self.telemetry_thread.data_received.connect(self.telemetry_log.append)
         # Connect status signal to graph update function
-        # Lambda to pick the specific column to plot. Temp is column 10, index = column - 1 = 9
-        self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[9]))
-
+        # Lambda to pick the specific column to plot. Temp is column 9, index = column - 1 = 8
+        self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[8]))
     """
     GUI MAIN WINDOW METHODS
     """
@@ -81,16 +95,29 @@ class GUIThread(QMainWindow):
             self.telemetry_thread.start()
             self.start_btn.setEnabled(False) 
 
-    def add_log(self, text):
-        self.message_box.appendPlainText(f"[{time.strftime('%H:%M:%S')}] {text}")
+    def update_log(self, data):
+        # Save data to telemetry_log
+        self.telemetry_log.append(data)
+        # Convert row to string and print as a msg
+        row_string = str(data)
+        self.message_box.appendPlainText(f"{time.strftime('%H:%M:%S')}\n" + row_string)
+        
+        # Update scroll bar limits
         self.message_box.verticalScrollBar().setValue(
             self.message_box.verticalScrollBar().maximum()
         )
-
     def update_graph(self, new_value):
         self.data_y = self.data_y[1:]  
         self.data_y.append(float(new_value))  
         self.line.setData(self.data_x, self.data_y)
+
+    def save_log(self):
+        file_name = time.strftime('%H%M%S') + ".csv"
+        with open(file_name, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["time", "#", "rssi", "ax", "ay", "az", "gx", "gy", "gz", "alt", "temp"])
+            writer.writerow(self.telemetry_log)
+        self.message_box.appendPlainText("Telemetry log saved as " + file_name + " :-)\n")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:

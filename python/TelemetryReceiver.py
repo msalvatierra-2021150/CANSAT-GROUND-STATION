@@ -16,10 +16,9 @@ class TelemetryReceiverThread(QThread):
     def run(self):
         PORT = '/dev/ttyUSB0' 
         BAUD = 115200
-        FILE_NAME = "telemetry_log.csv"
 
         if self.use_simulation:
-            self.status_update.emit("We are in simulation mode! :)")
+            self.status_update.emit("Simulation mode! :)\n")
         else:
             self.status_update.emit(f"Opening {PORT} for serial communication!")
         
@@ -29,55 +28,44 @@ class TelemetryReceiverThread(QThread):
             if not self.use_simulation:
                 ser = serial.Serial(PORT, BAUD, timeout=1)
 
-            with open(FILE_NAME, 'a', newline='') as f:
-                writer = csv.writer(f)
-                if f.tell() == 0:
-                    writer.writerow(["time", "#", "rssi", "ax", "ay", "az", "gx", "gy", "gz", "alt", "temp"])
+            while True:
+                if self.isInterruptionRequested():
+                    break
 
-                while True:
-                    if self.isInterruptionRequested():
-                        break
-
-                    if self.use_simulation:
-                        # SIMULATOR
-                        time.sleep(2.5) # Simulated data rate = 1/sleeptime
-                        self.sample_index += 1
-                        
-                        # Generate random fluctuating data
-                        rssi = random.randint(-90, -30)
-                        accel = [round(random.uniform(-1, 1), 2) for _ in range(3)]
-                        gyro = [round(random.uniform(-10, 10), 2) for _ in range(3)]
-                        alt = round(random.uniform(100, 150), 1)
-                        temp = round(random.uniform(20, 25), 1)
-                        
-                        # Create a list in the same format as CSV
-                        numeric_data = [self.sample_index, rssi] + accel + gyro + [alt, temp]
-                        # Convert all to strings to match serial.readline() behavior
-                        numeric_data = [str(x) for x in numeric_data]
+                if self.use_simulation:
+                    # SIMULATOR
+                    time.sleep(2.5) # Simulated data rate = 1/sleeptime
+                    self.sample_index += 1
                     
-                    else:
-                        # ACTUAL SERIAL RECEIVER LOGIC
-                        line = ser.readline().decode('utf-8', errors='ignore').strip()
-                        if not line.startswith("TLM"):
-                            continue
-                        numeric_data = line.split(',')[1:]
+                    # Generate random fluctuating data
+                    rssi = random.randint(-90, -30)
+                    accel = [round(random.uniform(-1, 1), 2) for _ in range(3)]
+                    gyro = [round(random.uniform(-10, 10), 2) for _ in range(3)]
+                    alt = round(random.uniform(100, 150), 1)
+                    temp = round(random.uniform(20, 25), 1)
+                    
+                    # Create a list in the same format as CSV
+                    numeric_data = [self.sample_index, rssi] + accel + gyro + [alt, temp]
+                    # Convert all to strings to match serial.readline() behavior
+                    numeric_data = [str(x) for x in numeric_data]
+                
+                else:
+                    # ACTUAL SERIAL RECEIVER LOGIC
+                    line = ser.readline().decode('utf-8', errors='ignore').strip()
+                    if not line.startswith("TLM"):
+                        continue
+                    numeric_data = line.split(',')[1:]
 
-                    # Make row
-                    timestamp = time.strftime("%H:%M:%S")
-                    row = [timestamp] + numeric_data
-
-                    writer.writerow(row)
-                    f.flush() 
-                    # Construct the formatted string for new data
-                    # row[0] = time, row[1] = #, row[2] = rssi, row[3] = ax, etc.
-                    formatted_msg = (
-                        f"#: {row[1]}    rssi: {row[2]}    "
-                        f"ax: {row[3]}    ay: {row[4]}    az: {row[5]}    "
-                        f"gx: {row[6]}    gy: {row[7]}    gz: {row[8]}    "
-                        f"alt: {row[9]}    temp: {row[10]}\n"
-                    )
-                    self.status_update.emit(formatted_msg)
-                    self.data_received.emit(numeric_data)
+                # Construct the formatted string for new data
+                # row[0] = time, row[1] = #, row[2] = rssi, row[3] = ax, etc.
+                formatted_msg = (
+                    f"#: {numeric_data[0]}    rssi: {numeric_data[1]}    "
+                    f"ax: {numeric_data[2]}    ay: {numeric_data[3]}    az: {numeric_data[4]}    "
+                    f"gx: {numeric_data[5]}    gy: {numeric_data[6]}    gz: {numeric_data[7]}    "
+                    f"alt: {numeric_data[8]}    temp: {numeric_data[9]}\n"
+                )
+                self.status_update.emit(formatted_msg)
+                self.data_received.emit(numeric_data)
 
             if ser: ser.close() # Close port if we were using the real thing
 
