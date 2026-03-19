@@ -12,7 +12,6 @@ import pyqtgraph as pg
 class GUIThread(QMainWindow):
     def __init__(self):
         super().__init__()
-        # Initialize empty telemetry log
         self.telemetry_log = []
         self.showFullScreen()
 
@@ -20,153 +19,181 @@ class GUIThread(QMainWindow):
         self.setCentralWidget(self.central_widget)
         
         """
-        GLOBAL STYLESHEET (DARK MODE WITH BLUE ACCENTS)
+        GLOBAL STYLESHEET (LIGHT MODE: BLUE PRIMARY, ORANGE SECONDARY)
         """
         self.setStyleSheet("""
             QWidget { 
-                background-color: #080808; 
-                color: #FFFFFF; 
+                background-color: #F5F5F5; 
+                color: #1A1A1A; 
             }
             QPushButton { 
-                background-color: #121212; 
-                border: 2px solid #1E90FF; 
+                background-color: #E0E0E0; 
+                border: 2px solid #0056B3; /* Primary Blue */
                 border-radius: 8px;
-                color: #FFFFFF;
+                color: #1A1A1A;
                 font-size: 16pt;
                 font-weight: bold;
             }
             QPushButton:hover { 
-                background-color: #1a3b5c; 
+                background-color: #FFF3E0; /* Light Orange Tint */
+                border: 2px solid #FF8C00; /* Secondary Orange */
             }
             QPushButton:pressed { 
-                background-color: #1E90FF; 
-                color: #000000; 
+                background-color: #FF8C00; /* Secondary Orange */
+                color: #FFFFFF; 
             }
         """)
 
-        """
-        MAIN VERTICAL LAYOUT (HOLDS TITLE BAR AND MAIN HORIZONTAL SPLIT)
-        """
         self.main_v_layout = QVBoxLayout(self.central_widget)
 
         """
-        TITLE BAR (TOP EDGE OF SCREEN)
+        TITLE BAR (PRIMARY BLUE ACCENT)
         """
         self.title_label = QLabel("Telemetry Dashboard")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setStyleSheet("background-color: #0a0a0a; color: #FFFFFF; font-size: 24pt; font-weight: bold; padding: 15px; border-bottom: 2px solid #1E90FF;")
+        self.title_label.setStyleSheet("""
+            background-color: #FFFFFF; 
+            color: #000000; 
+            font-size: 24pt; 
+            font-weight: bold; 
+            padding: 15px; 
+            border-bottom: 3px solid #0056B3; /* Primary Blue */
+        """)
         
         self.main_v_layout.addWidget(self.title_label, 0)
 
-        """
-        MAIN HORIZONTAL LAYOUT (SPLITS LEFT AND RIGHT SIDES)
-        """
         self.main_h_layout = QHBoxLayout() 
-        # Sets the pixel gap between the left and right halves of the screen
         self.main_h_layout.setSpacing(40) 
         self.main_v_layout.addLayout(self.main_h_layout, 1)
 
         """
-        LEFT SIDE LAYOUT (VERTICAL SPLIT)
+        LEFT SIDE (GRAPHS)
         """
         self.left_v_layout = QVBoxLayout() 
 
-        """
-        LINE GRAPH 1 (TOP LEFT CORNER OF SCREEN)
-        """
+        # --- Graph 1 (Environmental Conditions) ---
         self.line_graph1 = pg.PlotWidget()
-        self.line_graph1.setTitle("Live Telemetry Temp", color="w", size="15pt")
-        
-        # Background & grid appearance for line_graph1
-        self.line_graph1.setBackground('#0a0a0a') 
+        self.line_graph1.setTitle("Environmental Conditions", color="k", size="15pt")
+        self.line_graph1.setBackground('#FFFFFF') 
         self.line_graph1.showGrid(x=True, y=True, alpha=0.3) 
+        self.line_graph1.setXRange(0, 50, padding=0)
         
-        # Axis labels for line_graph1
-        self.line_graph1.setLabel('left', 'Temperature', units='°C', color='white', size='12pt') 
-        self.line_graph1.setLabel('bottom', 'Sample Index', color='white', size='12pt') 
+        # Y-AXIS: Temperature (20 to 40°C)
+        self.line_graph1.setYRange(20, 40, padding=0)
         
-        self.data_x = list(range(100))  
-        self.data_y = [0] * 100         
-        self.line = self.line_graph1.plot(self.data_x, self.data_y, pen=pg.mkPen(color='#00FFFF', width=2.5))
+        self.line_graph1.setLabel('left', 'Temperature', units='°C', color='black', size='12pt') 
+        self.line_graph1.setLabel('bottom', 'Sample Index', color='black', size='12pt') 
+        self.line_graph1.setLabel('right', 'Pressure', units='hPa', color='black', size='12pt')
+        self.line_graph1.getAxis('left').setTextPen('k')
+        self.line_graph1.getAxis('bottom').setTextPen('k')
+        self.line_graph1.getAxis('right').setTextPen('k')
         
+        self.legend = self.line_graph1.addLegend(offset=(30, 30))
+        self.line_graph1.showAxis('right')
+        
+        self.p1 = self.line_graph1.plotItem
+        self.p2 = pg.ViewBox()
+        self.p1.scene().addItem(self.p2)
+        self.p1.getAxis('right').linkToView(self.p2)
+        self.p2.setXLink(self.p1)
+        
+        # Y-AXIS: Pressure (900 to 1100 hPa)
+        self.p2.setYRange(900, 1100, padding=0)
+
+        self.data_x = []  
+        self.data_y = []         
+        self.line = self.line_graph1.plot(self.data_x, self.data_y, pen=pg.mkPen(color='#0056B3', width=2.5), name="Temperature")
+        
+        self.data_press = []
+        self.line_press = pg.PlotCurveItem(self.data_x, self.data_press, pen=pg.mkPen(color='#FF8C00', width=2.5))
+        self.p2.addItem(self.line_press)
+        self.legend.addItem(self.line_press, "Pressure")
+
+        def updateViews1():
+            self.p2.setGeometry(self.p1.vb.sceneBoundingRect())
+            self.p2.linkedViewChanged(self.p1.vb, self.p2.XAxis)
+        self.p1.vb.sigResized.connect(updateViews1)
+
         self.left_v_layout.addWidget(self.line_graph1, 1)
 
-        """
-        LINE GRAPH 2 (BOTTOM LEFT CORNER OF SCREEN)
-        """
+        # --- Graph 2 (Altitude & Velocity) ---
         self.line_graph2 = pg.PlotWidget()
-        self.line_graph2.setTitle("Live Telemetry Altitude", color="w", size="15pt")
-        
-        # Background & grid appearance for line_graph2
-        self.line_graph2.setBackground('#0a0a0a') 
+        self.line_graph2.setTitle("CanSat Altitude & Descent Velocity", color="k", size="15pt")
+        self.line_graph2.setBackground('#FFFFFF') 
         self.line_graph2.showGrid(x=True, y=True, alpha=0.3) 
+        self.line_graph2.setXRange(0, 50, padding=0)
         
-        # Axis labels for line_graph2
-        self.line_graph2.setLabel('left', 'Altitude', units='m', color='white', size='12pt') 
-        self.line_graph2.setLabel('bottom', 'Sample Index', color='white', size='12pt') 
+        # Y-AXIS: Altitude (0 to 600m)
+        self.line_graph2.setYRange(0, 600, padding=0)
         
-        self.data_y2 = [0] * 100         
-        self.line2 = self.line_graph2.plot(self.data_x, self.data_y2, pen=pg.mkPen(color='#1E90FF', width=2.5))
+        self.legend2 = self.line_graph2.addLegend(offset=(30, 30))
+        self.line_graph2.setLabel('left', 'Altitude', units='m', color='black', size='12pt') 
+        self.line_graph2.setLabel('bottom', 'Sample Index', color='black', size='12pt') 
+        self.line_graph2.getAxis('left').setTextPen('k')
+        self.line_graph2.getAxis('bottom').setTextPen('k')
+
+        self.line_graph2.showAxis('right')
+        self.line_graph2.setLabel('right', 'Descent Velocity', units='m/s', color='black', size='12pt')
+        self.line_graph2.getAxis('right').setTextPen('k')
         
+        self.p3 = self.line_graph2.plotItem
+        self.p4 = pg.ViewBox()
+        self.p3.scene().addItem(self.p4)
+        self.p3.getAxis('right').linkToView(self.p4)
+        self.p4.setXLink(self.p3)
+        
+        # Y-AXIS: Descent Velocity (-60 to 10 m/s)
+        self.p4.setYRange(-60, 10, padding=0)
+        
+        self.data_y2 = []  # Altitude
+        self.data_vel = [] # Velocity
+        
+        self.line2 = self.p3.plot(self.data_x, self.data_y2, pen=pg.mkPen(color='#0056B3', width=2.5), name="Altitude")
+        self.line_vel = pg.PlotCurveItem(self.data_x, self.data_vel, pen=pg.mkPen(color='#FF8C00', width=2.5))
+        self.p4.addItem(self.line_vel)
+        self.legend2.addItem(self.line_vel, "Descent Velocity")
+
+        def updateViews2():
+            self.p4.setGeometry(self.p3.vb.sceneBoundingRect())
+            self.p4.linkedViewChanged(self.p3.vb, self.p4.XAxis)
+        self.p3.vb.sigResized.connect(updateViews2)
+
         self.left_v_layout.addWidget(self.line_graph2, 1) 
 
         self.main_h_layout.addLayout(self.left_v_layout, 1)
 
         """
-        RIGHT SIDE LAYOUT (VERTICAL SPLIT)
+        RIGHT SIDE (TERMINAL & BUTTONS)
         """
         self.right_v_layout = QVBoxLayout() 
-
-        """
-        MESSAGE TERMINAL (TOP RIGHT OF SCREEN)
-        """
         self.message_box = QPlainTextEdit()
         self.message_box.setReadOnly(True)
-        self.message_box.setStyleSheet("background-color: #121212; color: #FFFFFF; font-family: 'Consolas'; font-size: 13pt; border: 1px solid #333333; border-radius: 5px;")
-        
+        self.message_box.setStyleSheet("background-color: #FAFAFA; color: #000000; font-family: 'Consolas'; font-size: 13pt; border: 1px solid #CCCCCC; border-radius: 5px;")
         self.right_v_layout.addWidget(self.message_box, 1) 
 
-        """
-        BUTTONS LAYOUT (BOTTOM RIGHT EDGE OF SCREEN)
-        """
         self.button_h_layout = QHBoxLayout() 
-        # Added spacing between the two buttons so they don't touch
         self.button_h_layout.setSpacing(20) 
-
-        # Start button
         self.start_btn = QPushButton("Start Telemetry Receiver")
         self.start_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.start_btn.clicked.connect(self.start_telemetry)
-        
         self.button_h_layout.addWidget(self.start_btn, 1) 
-
-        # Save button
         self.save_log_btn = QPushButton("Save Telemetry Log")
         self.save_log_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.save_log_btn.clicked.connect(self.save_log)
-        
         self.button_h_layout.addWidget(self.save_log_btn, 1) 
 
         self.right_v_layout.addLayout(self.button_h_layout, 1) 
-
         self.main_h_layout.addLayout(self.right_v_layout, 1) 
         
-        """
-        TELEMETRY RECEIVER SUBMODULE THREAD
-        """
-        # !!!!! Toggle simulation here !!!!!
-        self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) # !!!!! Turn of simulation here !!!!!
-        # Connect status signal to log terminal message box
+        self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) 
         self.telemetry_thread.status_update.connect(self.update_log)
-        # Connect status signal to graph update function
-        # Lambda to pick the specific column to plot. Temp is column 9, index = column - 1 = 8
-        self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[8]))
-        # Connect status signal to graph 2 update function
-        self.telemetry_thread.data_received.connect(lambda data: self.update_graph2(data[7]))
+        
+        # --- INDICES HERE ---
+        self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[9]))
+        self.telemetry_thread.data_received.connect(lambda data: self.update_graph2(data[8]))
+        self.telemetry_thread.data_received.connect(lambda data: self.update_graph_pressure(data[10]))
+        self.telemetry_thread.data_received.connect(lambda data: self.update_graph_velocity(data[6]))
 
-    """
-    GUI MAIN WINDOW METHODS
-    """
     def start_telemetry(self):
         if not self.telemetry_thread.isRunning():
             self.telemetry_thread.start()
@@ -178,30 +205,36 @@ class GUIThread(QMainWindow):
             if raw_values:
                 self.telemetry_log.append(raw_values)
         
-        # Convert row to string and print as a msg
         row_string = str(data)
         self.message_box.appendPlainText(f"{time.strftime('%H:%M:%S')}\n" + row_string)
-        
-        # Update scroll bar limits
-        self.message_box.verticalScrollBar().setValue(
-            self.message_box.verticalScrollBar().maximum()
-        )
+        self.message_box.verticalScrollBar().setValue(self.message_box.verticalScrollBar().maximum())
 
     def update_graph(self, new_value):
-        self.data_y = self.data_y[1:]  
-        self.data_y.append(float(new_value))  
+        self.data_y.append(float(new_value))
+        self.data_x.append(len(self.data_y) - 1)
         self.line.setData(self.data_x, self.data_y)
+        if len(self.data_x) > 50:
+            self.line_graph1.setXRange(0, len(self.data_x), padding=0)
 
     def update_graph2(self, new_value):
-        self.data_y2 = self.data_y2[1:]  
-        self.data_y2.append(float(new_value))  
+        self.data_y2.append(float(new_value))
         self.line2.setData(self.data_x, self.data_y2)
+        if len(self.data_x) > 50:
+            self.line_graph2.setXRange(0, len(self.data_x), padding=0)
+
+    def update_graph_pressure(self, new_value):
+        self.data_press.append(float(new_value))
+        self.line_press.setData(self.data_x, self.data_press)
+
+    def update_graph_velocity(self, new_value):
+        self.data_vel.append(float(new_value))
+        self.line_vel.setData(self.data_x, self.data_vel)
 
     def save_log(self):
         file_name = time.strftime('%H%M%S') + ".csv"
         with open(file_name, mode='w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["#", "rssi", "ax", "ay", "az", "gx", "gy", "gz", "alt", "temp"])
+            writer.writerow(["#", "rssi", "ax", "ay", "az", "gx", "gy", "gz", "alt", "temp", "press"])
             writer.writerows(self.telemetry_log)
         self.message_box.appendPlainText("Telemetry log saved as " + file_name + " :-)\n")
 
