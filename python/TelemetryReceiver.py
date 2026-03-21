@@ -36,7 +36,7 @@ class TelemetryReceiverThread(QThread):
 
                 if self.use_simulation:
                     # SIMULATOR SPEED
-                    time.sleep(0.1) 
+                    time.sleep(2) 
                     self.sample_index += 1
                     
                     # MISSION SEQUENCE
@@ -90,7 +90,7 @@ class TelemetryReceiverThread(QThread):
                 # STOP
                 # Break if simulated altitude hits 0 after the ascent phase is done
                 if self.use_simulation and self.sample_index > 150 and self.current_alt <= 0.0:
-                    self.status_update.emit("TOUCHDOWN! Simulation complete.\n")
+                    self.status_update.emit("Simulation complete.\n")
                     break
 
             if ser: ser.close()
