@@ -4,9 +4,11 @@ import time
 import re
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPlainTextEdit, QPushButton, QLabel,
-                             QSizePolicy)
+                             QSizePolicy, QDialog)
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from TelemetryReceiver import TelemetryReceiverThread
+from ImageProcessor import ImageProcessorThread
 import pyqtgraph as pg 
 
 class GUIThread(QMainWindow):
@@ -211,9 +213,9 @@ class GUIThread(QMainWindow):
         self.stacked_button_v_layout = QVBoxLayout()
         self.stacked_button_v_layout.setSpacing(10)
 
-        self.start_btn = QPushButton("Start Telemetry Receiver")
+        self.start_btn = QPushButton("Start Mission Systems")
         self.start_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.start_btn.clicked.connect(self.start_telemetry)
+        self.start_btn.clicked.connect(self.start_systems)
         self.stacked_button_v_layout.addWidget(self.start_btn, 1) 
         
         self.save_log_btn = QPushButton("Save Telemetry Log")
@@ -227,8 +229,15 @@ class GUIThread(QMainWindow):
 
         self.main_h_layout.addLayout(self.right_v_layout, 1) 
         
+        # --- THREAD INITIALIZATION ---
         self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) 
         self.telemetry_thread.status_update.connect(self.update_log)
+        
+        self.image_thread = ImageProcessorThread(use_simulation=True)
+        self.image_thread.status_update.connect(self.update_log)
+        
+        # CONNECT THE NEW IMAGE SIGNAL
+        self.image_thread.image_ready.connect(self.show_image_popup)
         
         # --- INDICES HERE ---
         self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[9]))
@@ -236,10 +245,37 @@ class GUIThread(QMainWindow):
         self.telemetry_thread.data_received.connect(lambda data: self.update_graph_pressure(data[10]))
         self.telemetry_thread.data_received.connect(lambda data: self.update_graph_velocity(data[6]))
 
-    def start_telemetry(self):
+    def start_systems(self):
+        # Start both threads when the button is clicked
         if not self.telemetry_thread.isRunning():
             self.telemetry_thread.start()
-            self.start_btn.setEnabled(False) 
+        if not self.image_thread.isRunning():
+            self.image_thread.start()
+            
+        self.start_btn.setEnabled(False) 
+
+    def show_image_popup(self, image_path):
+        """Displays a pop-up dialog with the image sent from the processor thread"""
+        # Create a new dialog window
+        self.image_dialog = QDialog(self)
+        self.image_dialog.setWindowTitle("Stereoscopic Image Received")
+        
+        layout = QVBoxLayout()
+        image_label = QLabel()
+        
+        # Load the image
+        pixmap = QPixmap(image_path)
+        
+        if pixmap.isNull():
+            self.message_box.appendPlainText(f"Error: Could not load {image_path}. Check if file exists.\n")
+        else:
+            # Scale the image slightly if it's too huge, keeping aspect ratio
+            scaled_pixmap = pixmap.scaled(800, 600, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            image_label.setPixmap(scaled_pixmap)
+            
+        layout.addWidget(image_label)
+        self.image_dialog.setLayout(layout)
+        self.image_dialog.show() # .show() keeps it non-blocking. .exec() would pause the main UI
 
     def update_log(self, data):
         if data != "Simulation mode! :)\n":
@@ -307,8 +343,13 @@ class GUIThread(QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
+            # Stop both threads cleanly
             self.telemetry_thread.requestInterruption()
+            self.image_thread.requestInterruption()
+            
             self.telemetry_thread.wait() 
+            self.image_thread.wait()
+            
             self.close()
 
 if __name__ == "__main__":

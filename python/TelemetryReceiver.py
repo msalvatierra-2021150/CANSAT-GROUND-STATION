@@ -36,7 +36,7 @@ class TelemetryReceiverThread(QThread):
 
                 if self.use_simulation:
                     # SIMULATOR SPEED
-                    time.sleep(2) 
+                    time.sleep(0.1) 
                     self.sample_index += 1
                     
                     # MISSION SEQUENCE
