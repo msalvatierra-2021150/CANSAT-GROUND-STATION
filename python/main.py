@@ -170,19 +170,57 @@ class GUIThread(QMainWindow):
         self.message_box.setReadOnly(True)
         self.message_box.setStyleSheet("background-color: #FAFAFA; color: #000000; font-family: 'Consolas'; font-size: 13pt; border: 1px solid #CCCCCC; border-radius: 5px;")
         self.right_v_layout.addWidget(self.message_box, 1) 
-
+        
+# BUTTONS START HERE
         self.button_h_layout = QHBoxLayout() 
         self.button_h_layout.setSpacing(20) 
+
+        # --- MISSION STATUS INDICATOR (Left Side) ---
+        self.phase_v_layout = QVBoxLayout()
+        self.phase_v_layout.setSpacing(5)
+        
+        self.phase1_label = QLabel("Phase 1")
+        self.phase2_label = QLabel("Phase 2")
+        self.phase3_label = QLabel("Phase 3")
+        self.phase4_label = QLabel("Phase 4")
+
+        # Styling to make them look like indicator bars
+        indicator_style = """
+            background-color: #E0E0E0; 
+            color: #1A1A1A; 
+            font-size: 14pt; 
+            font-weight: bold; 
+            border: 1px solid #CCCCCC;
+            border-radius: 5px;
+            padding: 5px;
+        """
+        
+        for phase_label in [self.phase1_label, self.phase2_label, self.phase3_label, self.phase4_label]:
+            phase_label.setStyleSheet(indicator_style)
+            phase_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.phase_v_layout.addWidget(phase_label)
+
+        # Add the phase indicator layout to the left side
+        self.button_h_layout.addLayout(self.phase_v_layout, 1)
+        # ---------------------------------------------
+
+        self.stacked_button_v_layout = QVBoxLayout()
+        self.stacked_button_v_layout.setSpacing(10)
+
         self.start_btn = QPushButton("Start Telemetry Receiver")
         self.start_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.start_btn.clicked.connect(self.start_telemetry)
-        self.button_h_layout.addWidget(self.start_btn, 1) 
+        self.stacked_button_v_layout.addWidget(self.start_btn, 1) 
+        
         self.save_log_btn = QPushButton("Save Telemetry Log")
         self.save_log_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.save_log_btn.clicked.connect(self.save_log)
-        self.button_h_layout.addWidget(self.save_log_btn, 1) 
+        self.stacked_button_v_layout.addWidget(self.save_log_btn, 1) 
 
-        self.right_v_layout.addLayout(self.button_h_layout, 1) 
+        self.button_h_layout.addLayout(self.stacked_button_v_layout, 1)
+
+        self.right_v_layout.addLayout(self.button_h_layout, 1)
+
         self.main_h_layout.addLayout(self.right_v_layout, 1) 
         
         self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) 
