@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPlainTextEdit, QPushButton, QLabel,
                              QSizePolicy, QDialog)
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from TelemetryReceiver import TelemetryReceiverThread
 from ImageProcessor import ImageProcessorThread
 import pyqtgraph as pg 
@@ -186,10 +186,15 @@ class GUIThread(QMainWindow):
         self.previous_altitude = 0.0
         self.mission_phase = 1
 
-        self.phase1_label = QLabel("Drone Ascent")
-        self.phase2_label = QLabel("Phase 2")
-        self.phase3_label = QLabel("Phase 3")
-        self.phase4_label = QLabel("Phase 4")
+        # --- RX TIMER SETUP ---
+        self.last_rx_seconds = 0
+        self.rx_timer = QTimer(self)
+        self.rx_timer.timeout.connect(self.tick_rx_timer)
+
+        self.phase1_label = QLabel("Mission Phase: Drone Ascent")
+        self.phase2_label = QLabel("Last Rx: 0s")
+        self.phase3_label = QLabel("Camera waiting")
+        self.phase4_label = QLabel("Mission in Progress")
 
         # Styling to make them look like indicator bars
         indicator_style = """
@@ -235,8 +240,6 @@ class GUIThread(QMainWindow):
         
         self.image_thread = ImageProcessorThread(use_simulation=True)
         self.image_thread.status_update.connect(self.update_log)
-        
-        # CONNECT THE NEW IMAGE SIGNAL
         self.image_thread.image_ready.connect(self.show_image_popup)
         
         # --- INDICES HERE ---
@@ -252,10 +255,39 @@ class GUIThread(QMainWindow):
         if not self.image_thread.isRunning():
             self.image_thread.start()
             
+        # Start the Rx tracking timer
+        if not self.rx_timer.isActive():
+            self.rx_timer.start(1000) # 1000 milliseconds = 1 second
+            
         self.start_btn.setEnabled(False) 
+
+    def tick_rx_timer(self):
+        """Called every second to increment the Last Rx timer"""
+        if self.last_rx_seconds < 30:
+            self.last_rx_seconds += 1
+        
+        self.phase2_label.setText(f"Last Rx: {self.last_rx_seconds}s")
+        
+    def reset_rx_timer(self):
+        """Called whenever new telemetry data is detected"""
+        self.last_rx_seconds = 0
+        self.phase2_label.setText("Last Rx: 0s")
 
     def show_image_popup(self, image_path):
         """Displays a pop-up dialog with the image sent from the processor thread"""
+        
+        # --- UPDATE PHASE 3 INDICATOR ---
+        self.phase3_label.setText("Camera Done")
+        self.phase3_label.setStyleSheet("""
+            background-color: #28A745; /* Success Green */
+            color: #FFFFFF; 
+            font-size: 14pt; 
+            font-weight: bold; 
+            border: 1px solid #1E7E34;
+            border-radius: 5px;
+            padding: 5px;
+        """)
+
         # Create a new dialog window
         self.image_dialog = QDialog(self)
         self.image_dialog.setWindowTitle("Stereoscopic Image Received")
@@ -275,13 +307,16 @@ class GUIThread(QMainWindow):
             
         layout.addWidget(image_label)
         self.image_dialog.setLayout(layout)
-        self.image_dialog.show() # .show() keeps it non-blocking. .exec() would pause the main UI
+        self.image_dialog.show()
 
     def update_log(self, data):
+        # We process incoming string data
         if data != "Simulation mode! :)\n":
             raw_values = re.findall(r':\s*([-\d.]+)', data)
             if raw_values:
+                # We successfully found telemetry numbers, meaning data is valid!
                 self.telemetry_log.append(raw_values)
+                self.reset_rx_timer() # Reset the Phase 2 Timer
         
         row_string = str(data)
         self.message_box.appendPlainText(f"{time.strftime('%H:%M:%S')}\n" + row_string)
@@ -322,13 +357,30 @@ class GUIThread(QMainWindow):
             # If we hit 400m AND current altitude is lower than last reading
             if self.max_altitude >= 400.0 and current_altitude < self.previous_altitude:
                 self.mission_phase = 2
-                self.phase1_label.setText("Free Fall")
+                self.phase1_label.setText("Mission Phase: Free Fall")
 
         # Check Phase 2 -> Phase 3 (Free Fall to Descent) transition
         elif self.mission_phase == 2:
             if current_altitude <= 100.0:
                 self.mission_phase = 3
-                self.phase1_label.setText("Descent")
+                self.phase1_label.setText("Mission Phase: Descent")
+                
+        # Check Phase 3 -> Phase 4 (Descent to Landed) transition
+        elif self.mission_phase == 3:
+            if current_altitude <= 0.0:
+                self.mission_phase = 4
+                self.phase1_label.setText("Mission Phase: Landed")
+                self.phase4_label.setText("Mission Complete")
+                # Make the Mission Complete indicator glow green
+                self.phase4_label.setStyleSheet("""
+                    background-color: #28A745; /* Success Green */
+                    color: #FFFFFF; 
+                    font-size: 14pt; 
+                    font-weight: bold; 
+                    border: 1px solid #1E7E34;
+                    border-radius: 5px;
+                    padding: 5px;
+                """)
 
         # Save current altitude for the next comparison
         self.previous_altitude = current_altitude
@@ -343,9 +395,10 @@ class GUIThread(QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
-            # Stop both threads cleanly
+            # Stop both threads and the timer cleanly
             self.telemetry_thread.requestInterruption()
             self.image_thread.requestInterruption()
+            self.rx_timer.stop()
             
             self.telemetry_thread.wait() 
             self.image_thread.wait()
