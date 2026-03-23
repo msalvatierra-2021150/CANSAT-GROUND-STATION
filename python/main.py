@@ -171,7 +171,7 @@ class GUIThread(QMainWindow):
         self.message_box.setStyleSheet("background-color: #FAFAFA; color: #000000; font-family: 'Consolas'; font-size: 13pt; border: 1px solid #CCCCCC; border-radius: 5px;")
         self.right_v_layout.addWidget(self.message_box, 1) 
         
-# BUTTONS START HERE
+        # BUTTONS START HERE
         self.button_h_layout = QHBoxLayout() 
         self.button_h_layout.setSpacing(20) 
 
@@ -179,7 +179,12 @@ class GUIThread(QMainWindow):
         self.phase_v_layout = QVBoxLayout()
         self.phase_v_layout.setSpacing(5)
         
-        self.phase1_label = QLabel("Phase 1")
+        # --- MISSION STATE VARIABLES ---
+        self.max_altitude = 0.0
+        self.previous_altitude = 0.0
+        self.mission_phase = 1
+
+        self.phase1_label = QLabel("Drone Ascent")
         self.phase2_label = QLabel("Phase 2")
         self.phase3_label = QLabel("Phase 3")
         self.phase4_label = QLabel("Phase 4")
@@ -202,7 +207,6 @@ class GUIThread(QMainWindow):
 
         # Add the phase indicator layout to the left side
         self.button_h_layout.addLayout(self.phase_v_layout, 1)
-        # ---------------------------------------------
 
         self.stacked_button_v_layout = QVBoxLayout()
         self.stacked_button_v_layout.setSpacing(10)
@@ -255,10 +259,14 @@ class GUIThread(QMainWindow):
             self.line_graph1.setXRange(0, len(self.data_x), padding=0)
 
     def update_graph2(self, new_value):
-        self.data_y2.append(float(new_value))
+        altitude = float(new_value)
+        self.data_y2.append(altitude)
         self.line2.setData(self.data_x, self.data_y2)
         if len(self.data_x) > 50:
             self.line_graph2.setXRange(0, len(self.data_x), padding=0)
+            
+        # Altitude -> state machine
+        self.check_mission_phase(altitude)
 
     def update_graph_pressure(self, new_value):
         self.data_press.append(float(new_value))
@@ -267,6 +275,27 @@ class GUIThread(QMainWindow):
     def update_graph_velocity(self, new_value):
         self.data_vel.append(float(new_value))
         self.line_vel.setData(self.data_x, self.data_vel)
+
+    def check_mission_phase(self, current_altitude):
+        # Update maximum altitude reached
+        if current_altitude > self.max_altitude:
+            self.max_altitude = current_altitude
+
+        # Check Phase 1 -> Phase 2 (Ascent to Free Fall) transition
+        if self.mission_phase == 1:
+            # If we hit 400m AND current altitude is lower than last reading
+            if self.max_altitude >= 400.0 and current_altitude < self.previous_altitude:
+                self.mission_phase = 2
+                self.phase1_label.setText("Free Fall")
+
+        # Check Phase 2 -> Phase 3 (Free Fall to Descent) transition
+        elif self.mission_phase == 2:
+            if current_altitude <= 100.0:
+                self.mission_phase = 3
+                self.phase1_label.setText("Descent")
+
+        # Save current altitude for the next comparison
+        self.previous_altitude = current_altitude
 
     def save_log(self):
         file_name = time.strftime('%H%M%S') + ".csv"
