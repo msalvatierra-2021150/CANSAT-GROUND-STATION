@@ -235,7 +235,7 @@ class GUIThread(QMainWindow):
         self.main_h_layout.addLayout(self.right_v_layout, 1) 
         
         # --- THREAD INITIALIZATION ---
-        self.telemetry_thread = TelemetryReceiverThread(use_simulation=True) 
+        self.telemetry_thread = TelemetryReceiverThread(use_simulation=False) 
         self.telemetry_thread.status_update.connect(self.update_log)
         
         self.image_thread = ImageProcessorThread(use_simulation=True)
