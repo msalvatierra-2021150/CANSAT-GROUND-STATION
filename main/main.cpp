@@ -56,7 +56,7 @@ void fsk_rx_task(void *arg) {
 
     // 1) Initial Setup
     // Frequency: 915.0 MHz, Bitrate: 50.0 kbps, Dev: 25.0 kHz, BW: 100.0 kHz
-    int state = radio.beginFSK(915.0, 50.0, 25.0, 100.0, 17, 40);
+    int state = radio.beginFSK(915.0, 50.0, 25.0, 125.0, 17, 40);
     
     if (state != RADIOLIB_ERR_NONE) {
         ESP_LOGE(TAG, "FSK init failed! Code: %d", state);
@@ -68,7 +68,7 @@ void fsk_rx_task(void *arg) {
     uint8_t syncWord[] = { 0x2D, 0xD4 };
     radio.setSyncWord(syncWord, 2);
     radio.setCRC(true);
-    radio.fixedPacketLengthMode(sizeof(TelemetryF32V1));
+    radio.variablePacketLengthMode();
 
     // 3) Set Interrupt Callback (Passing function pointer, no parentheses)
     radio.setDio0Action(setFlag, RISING);
