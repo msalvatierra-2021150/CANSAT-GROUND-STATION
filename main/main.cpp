@@ -35,6 +35,18 @@ typedef struct {
     float velocityX, velocityY, velocityZ;
     float altitude;   // meters
 } TelemetryF32V1;
+
+
+// 2. The Packed Struct: Prevent 32-bit memory padding corruption
+struct __attribute__((packed)) ImageChunkPacket {
+    uint8_t magic1;
+    uint8_t magic2;
+    uint16_t image_id;
+    uint16_t total_chunks;
+    uint16_t chunk_index;
+    uint8_t payload[50]; // Sized specifically for the 64-byte hardware FIFO
+};
+
 #pragma pack(pop)
 
 // ===================== GLOBAL RADIO OBJECTS =====================

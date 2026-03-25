@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "CansatGroundStation",
-    "project_version":    "8022072-dirty",
+    "project_version":    "01639cb-dirty",
     "project_path":       "/home/evan/Documents/CANSAT-GROUND-STATION",
     "idf_path":           "/home/evan/esp/esp-idf",
     "build_dir":          "/home/evan/Documents/CANSAT-GROUND-STATION/build",
