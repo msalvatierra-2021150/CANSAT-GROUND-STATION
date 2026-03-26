@@ -178,7 +178,7 @@ void fsk_rx_task(void *arg) {
                    
                    // Flush stdout to ensure the massive string is pushed out immediately
                    fflush(stdout);
-                }             
+                }              
               }
             } else {
                ESP_LOGW(TAG, "Chunk index %u out of bounds!", img.chunk_index);
@@ -192,14 +192,27 @@ void fsk_rx_task(void *arg) {
       radio.startReceive();
       lastWatchdogKick = xTaskGetTickCount();
     }
+
     // --- IMAGE TIMEOUT LOGIC ---
     if (current_image_id != 0xFFFF) {
       // If 3 seconds have passed since the last chunk, dump what we have!
       if ((xTaskGetTickCount() - last_chunk_time) > pdMS_TO_TICKS(3000)) {
         
         uint32_t final_size = expected_total_chunks * CHUNK_PAYLOAD_SIZE;
-        ESP_LOGW(TAG, "=== IMAGE %u TIMEOUT! Missing %u chunks. Dumping partial image. ===", 
+        ESP_LOGW(TAG, "=== IMAGE %u TIMEOUT! Missing %u chunks. ===", 
                  current_image_id, (expected_total_chunks - chunks_received));
+        
+        // --- NEW: Print exact missing chunks ---
+        printf("MISSING_CHUNKS: ");
+        for (uint16_t i = 0; i < expected_total_chunks; i++) {
+            if (!chunk_map[i]) {
+                printf("%u ", i);
+            }
+        }
+        printf("\n");
+        // ---------------------------------------
+
+        ESP_LOGW(TAG, "Dumping partial image.");
         
         // Print the partial image anyway
         printf("CAM,%u,%lu,", current_image_id, final_size);
@@ -213,6 +226,7 @@ void fsk_rx_task(void *arg) {
         current_image_id = 0xFFFF;
       }
     }
+
     if ((xTaskGetTickCount() - lastWatchdogKick) > pdMS_TO_TICKS(10000)) {
       ESP_LOGD(TAG, "Forcing RX restart...");
       radio.startReceive();
