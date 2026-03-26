@@ -2,34 +2,34 @@
 	"sources" : 
 	[
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/CMakeFiles/bootloader"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/CMakeFiles/bootloader"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/CMakeFiles/bootloader.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/CMakeFiles/bootloader.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/CMakeFiles/bootloader-complete.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/CMakeFiles/bootloader-complete.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
 		},
 		{
-			"file" : "/home/michael/cansat/cansat_ground_station/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+			"file" : "/home/evan/Documents/CANSAT-GROUND-STATION/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
 		}
 	],
 	"target" : 

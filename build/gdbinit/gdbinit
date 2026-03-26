@@ -1,2 +1,2 @@
-source /home/michael/cansat/cansat_ground_station/build/gdbinit/symbols
-source /home/michael/cansat/cansat_ground_station/build/gdbinit/connect
+source /home/evan/Documents/CANSAT-GROUND-STATION/build/gdbinit/symbols
+source /home/evan/Documents/CANSAT-GROUND-STATION/build/gdbinit/connect

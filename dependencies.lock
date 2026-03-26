@@ -2,7 +2,7 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 6.0.0
+    version: 5.5.2
   jgromes/radiolib:
     component_hash: 3baedfa4c97b2f9d97c8066f587ff425585f670bb22e8f039202a23924e94de7
     dependencies:
@@ -16,6 +16,6 @@ dependencies:
 direct_dependencies:
 - idf
 - jgromes/radiolib
-manifest_hash: 29b97c2667832f44b0887ebfec1b006cf8ac848050151d60d57d289862270cec
+manifest_hash: 2540afcc75dc6f4894665a4dc91883dda2dbd931b90c1c6b47fef56a852d35fe
 target: esp32
-version: 3.0.0
+version: 2.0.0
