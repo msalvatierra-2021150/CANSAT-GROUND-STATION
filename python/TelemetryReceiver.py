@@ -3,11 +3,13 @@ import csv
 import time
 import random 
 import math # For pressure calculations
+import os
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 
 class TelemetryReceiverThread(QThread):
     status_update = pyqtSignal(str)  
     data_received = pyqtSignal(list) 
+    image_received = pyqtSignal(str)
 
     def __init__(self, use_simulation=False): 
         super().__init__()
@@ -28,7 +30,8 @@ class TelemetryReceiverThread(QThread):
         try:
             ser = None
             if not self.use_simulation:
-                ser = serial.Serial(PORT, BAUD, timeout=1)
+                # Increased timeout slightly just in case the giant image string takes a moment to transfer
+                ser = serial.Serial(PORT, BAUD, timeout=2)
 
             while True:
                 if self.isInterruptionRequested():
@@ -71,27 +74,76 @@ class TelemetryReceiverThread(QThread):
                     ]
                     
                     numeric_data = [str(x) for x in numeric_data]
+                    
+                    # Formatted message terminal (Simulation)
+                    formatted_msg = (
+                        f"#: {numeric_data[0]}    rssi: {numeric_data[1]}    "
+                        f"ax: {numeric_data[2]}    ay: {numeric_data[3]}    az: {numeric_data[4]}    "
+                        f"vel: {numeric_data[6]}    alt: {numeric_data[8]}    temp: {numeric_data[9]}\n"
+                    )
+                    self.status_update.emit(formatted_msg)
+                    self.data_received.emit(numeric_data)
+
+                    # STOP: Break if simulated altitude hits 0 after the ascent phase is done
+                    if self.sample_index > 150 and self.current_alt <= 0.0:
+                        self.status_update.emit("Simulation complete.\n")
+                        break
                 
                 else:
+                    # REAL HARDWARE READ
                     line = ser.readline().decode('utf-8', errors='ignore').strip()
-                    if not line.startswith("TLM"):
+                    
+                    if not line:
                         continue
-                    numeric_data = line.split(',')[1:]
-
-                # Formatted message terminal
-                formatted_msg = (
-                    f"#: {numeric_data[0]}    rssi: {numeric_data[1]}    "
-                    f"ax: {numeric_data[2]}    ay: {numeric_data[3]}    az: {numeric_data[4]}    "
-                    f"vel: {numeric_data[6]}    alt: {numeric_data[8]}    temp: {numeric_data[9]}\n"
-                )
-                self.status_update.emit(formatted_msg)
-                self.data_received.emit(numeric_data)
-
-                # STOP
-                # Break if simulated altitude hits 0 after the ascent phase is done
-                if self.use_simulation and self.sample_index > 150 and self.current_alt <= 0.0:
-                    self.status_update.emit("Simulation complete.\n")
-                    break
+                        
+                    # --- ROUTER: TELEMETRY DATA ---
+                    if line.startswith("TLM"):
+                        numeric_data = line.split(',')[1:]
+                        
+                        # Formatted message terminal
+                        formatted_msg = (
+                            f"#: {numeric_data[0]}    rssi: {numeric_data[1]}    "
+                            f"ax: {numeric_data[2]}    ay: {numeric_data[3]}    az: {numeric_data[4]}    "
+                            f"vel: {numeric_data[6]}    alt: {numeric_data[8]}    temp: {numeric_data[9]}\n"
+                        )
+                        self.status_update.emit(formatted_msg)
+                        self.data_received.emit(numeric_data)
+                    
+                    # --- ROUTER: IMAGE DATA ---
+                    elif line.startswith("CAM"):
+                        parts = line.split(',')
+                        
+                        # Verify we have all 4 parts: "CAM", "ID", "SIZE", "HEX_STRING"
+                        if len(parts) >= 4:
+                            img_id = parts[1]
+                            img_size = parts[2]
+                            
+                            # Add .strip() to remove any hidden newlines/spaces from the serial monitor
+                            hex_data = parts[3].strip() 
+                            
+                            self.status_update.emit(f"\n[!] Incoming image detected! ID: {img_id}, Size: {img_size} bytes...\n")
+                            
+                            try:
+                                # Define the path BEFORE attempting to decode or write
+                                filename = f"flight_image_{img_id}.jpg" 
+                                abs_path = os.path.abspath(filename)
+                                
+                                # 1. Convert hex string to raw binary bytes
+                                image_bytes = bytes.fromhex(hex_data)
+                                
+                                # 2. Save it to disk
+                                with open(abs_path, "wb") as img_file:
+                                    img_file.write(image_bytes)
+                                
+                                self.status_update.emit(f"=== SUCCESS: Saved image to {abs_path} ===\n")
+                                
+                                # 3. Tell the GUI to pop it up!
+                                self.image_received.emit(abs_path) 
+                                
+                            except Exception as e:
+                                self.status_update.emit(f"=== ERROR DECODING IMAGE: {e} ===\n")
+                        else:
+                            self.status_update.emit("=== ERROR: Malformed CAM serial string received! ===\n")
 
             if ser: ser.close()
 

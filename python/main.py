@@ -238,9 +238,7 @@ class GUIThread(QMainWindow):
         self.telemetry_thread = TelemetryReceiverThread(use_simulation=False) 
         self.telemetry_thread.status_update.connect(self.update_log)
         
-        self.image_thread = ImageProcessorThread(use_simulation=True)
-        self.image_thread.status_update.connect(self.update_log)
-        self.image_thread.image_ready.connect(self.show_image_popup)
+        self.telemetry_thread.image_received.connect(self.show_image_popup)
         
         # --- INDICES HERE ---
         self.telemetry_thread.data_received.connect(lambda data: self.update_graph(data[9]))
@@ -307,7 +305,7 @@ class GUIThread(QMainWindow):
             
         layout.addWidget(image_label)
         self.image_dialog.setLayout(layout)
-        self.image_dialog.show()
+        self.image_dialog.exec()
 
     def update_log(self, data):
         # We process incoming string data
