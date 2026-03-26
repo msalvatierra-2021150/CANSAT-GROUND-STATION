@@ -250,8 +250,6 @@ class GUIThread(QMainWindow):
         # Start both threads when the button is clicked
         if not self.telemetry_thread.isRunning():
             self.telemetry_thread.start()
-        if not self.image_thread.isRunning():
-            self.image_thread.start()
             
         # Start the Rx tracking timer
         if not self.rx_timer.isActive():
@@ -395,11 +393,9 @@ class GUIThread(QMainWindow):
         if event.key() == Qt.Key.Key_Escape:
             # Stop both threads and the timer cleanly
             self.telemetry_thread.requestInterruption()
-            self.image_thread.requestInterruption()
             self.rx_timer.stop()
             
             self.telemetry_thread.wait() 
-            self.image_thread.wait()
             
             self.close()
 
