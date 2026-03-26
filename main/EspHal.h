@@ -196,9 +196,9 @@ public:
     this->pinMode(this->spiMOSI, OUTPUT);
 
     // USING THE v6.0 ROM NAMESPACES
-    rom_gpio_matrix_out(this->spiSCK, HSPICLK_OUT_IDX, false, false);
-    rom_gpio_matrix_in(this->spiMISO, HSPIQ_OUT_IDX, false);
-    rom_gpio_matrix_out(this->spiMOSI, HSPID_IN_IDX, false,
+    gpio_matrix_out(this->spiSCK, HSPICLK_OUT_IDX, false, false);
+    gpio_matrix_in(this->spiMISO, HSPIQ_OUT_IDX, false);
+    gpio_matrix_out(this->spiMOSI, HSPID_IN_IDX, false,
                         false); // Add this one too if it's there
   }
 
@@ -222,9 +222,9 @@ public:
   void spiEndTransaction() {}
 
   void spiEnd() {
-    rom_gpio_matrix_out(this->spiSCK, MATRIX_DETACH_OUT_SIG, false, false);
-    rom_gpio_matrix_in(this->spiMISO, MATRIX_DETACH_IN_LOW_PIN, false);
-    rom_gpio_matrix_out(this->spiMOSI, MATRIX_DETACH_OUT_SIG, false, false);
+    gpio_matrix_out(this->spiSCK, MATRIX_DETACH_OUT_SIG, false, false);
+    gpio_matrix_in(this->spiMISO, MATRIX_DETACH_IN_LOW_PIN, false);
+    gpio_matrix_out(this->spiMOSI, MATRIX_DETACH_OUT_SIG, false, false);
   }
 
 private:
