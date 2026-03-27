@@ -51,15 +51,15 @@ class GUIThread(QMainWindow):
         """
         TITLE BAR (PRIMARY BLUE ACCENT)
         """
-        self.title_label = QLabel("Telemetry Dashboard")
+        self.title_label = QLabel("JBU Golden Eagles")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title_label.setStyleSheet("""
-            background-color: #FFFFFF; 
-            color: #000000; 
+            background-color: #1B4A7E; /* JBU Blue */
+            color: #FFFFFF; /* JBU White */
             font-size: 24pt; 
             font-weight: bold; 
             padding: 15px; 
-            border-bottom: 3px solid #0056B3; /* Primary Blue */
+            border-bottom: 3px solid #000000; /* JBU Black */
         """)
         
         self.main_v_layout.addWidget(self.title_label, 0)
