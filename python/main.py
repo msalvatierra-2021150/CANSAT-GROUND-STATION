@@ -113,12 +113,22 @@ class GUIThread(QMainWindow):
         # Y-AXIS: Temperature (20 to 40°C)
         self.line_graph1.setYRange(20, 40, padding=0)
         
-        self.line_graph1.setLabel('left', 'Temperature', units='°C', color='black', size='12pt') 
+        # Clear default rotated Y-axis labels; keep the bottom index
+        self.line_graph1.setLabel('left', '') 
         self.line_graph1.setLabel('bottom', 'Sample Index', color='black', size='12pt') 
-        self.line_graph1.setLabel('right', 'Pressure', units='hPa', color='black', size='12pt')
+        self.line_graph1.setLabel('right', '')
+        
         self.line_graph1.getAxis('left').setTextPen('k')
         self.line_graph1.getAxis('bottom').setTextPen('k')
         self.line_graph1.getAxis('right').setTextPen('k')
+
+        # Create horizontal labels for the units
+        unit_left1 = pg.LabelItem("(°C)", color='k', size='12pt')
+        unit_right1 = pg.LabelItem("(hPa)", color='k', size='12pt')
+
+        # Inject them into the plot's layout grid directly above the axes (Row 1, Cols 0 & 2)
+        self.line_graph1.plotItem.layout.addItem(unit_left1, 1, 0)
+        self.line_graph1.plotItem.layout.addItem(unit_right1, 1, 2)
         
         self.legend = self.line_graph1.addLegend(offset=(30, 30))
         self.line_graph1.showAxis('right')
@@ -159,14 +169,24 @@ class GUIThread(QMainWindow):
         self.line_graph2.setYRange(0, 600, padding=0)
         
         self.legend2 = self.line_graph2.addLegend(offset=(30, 30))
-        self.line_graph2.setLabel('left', 'Altitude', units='m', color='black', size='12pt') 
+        
+        # Clear default rotated Y-axis labels
+        self.line_graph2.setLabel('left', '') 
         self.line_graph2.setLabel('bottom', 'Sample Index', color='black', size='12pt') 
+        self.line_graph2.showAxis('right')
+        self.line_graph2.setLabel('right', '')
+
         self.line_graph2.getAxis('left').setTextPen('k')
         self.line_graph2.getAxis('bottom').setTextPen('k')
-
-        self.line_graph2.showAxis('right')
-        self.line_graph2.setLabel('right', 'Descent Velocity', units='m/s', color='black', size='12pt')
         self.line_graph2.getAxis('right').setTextPen('k')
+        
+        # Create horizontal labels for the units
+        unit_left2 = pg.LabelItem("(m)", color='k', size='12pt')
+        unit_right2 = pg.LabelItem("(m/s)", color='k', size='12pt')
+
+        # Inject them into the layout grid directly above the axes
+        self.line_graph2.plotItem.layout.addItem(unit_left2, 1, 0)
+        self.line_graph2.plotItem.layout.addItem(unit_right2, 1, 2)
         
         self.p3 = self.line_graph2.plotItem
         self.p4 = pg.ViewBox()
