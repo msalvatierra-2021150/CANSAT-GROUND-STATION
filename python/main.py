@@ -49,23 +49,53 @@ class GUIThread(QMainWindow):
         self.main_v_layout = QVBoxLayout(self.central_widget)
 
         """
-        TITLE BAR (PRIMARY BLUE ACCENT)
+        TITLE BAR (PRIMARY BLUE ACCENT WITH LOGOS)
         """
+        # 1. Create a container widget for the whole title bar
+        self.title_bar_container = QWidget()
+        self.title_bar_container.setStyleSheet("""
+            QWidget {
+                background-color: #1B4A7E; /* JBU Blue */
+                border-bottom: 3px solid #000000; /* JBU Black */
+            }
+            QLabel {
+                border: none; /* Prevents inner labels from doubling the border */
+            }
+        """)
+
+        # 2. Create a horizontal layout for the container
+        self.title_h_layout = QHBoxLayout(self.title_bar_container)
+        self.title_h_layout.setContentsMargins(15, 10, 15, 10) # Left, Top, Right, Bottom padding
+
+        # 3. Setup Left Logo
+        self.left_logo = QLabel()
+        left_pixmap = QPixmap("jbu_logo_cansat.png").scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.left_logo.setPixmap(left_pixmap)
+        self.title_h_layout.addWidget(self.left_logo)
+
+        # 4. Setup Center Text
         self.title_label = QLabel("JBU Golden Eagles")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title_label.setStyleSheet("""
-            background-color: #1B4A7E; /* JBU Blue */
             color: #FFFFFF; /* JBU White */
             font-size: 24pt; 
             font-weight: bold; 
-            padding: 15px; 
-            border-bottom: 3px solid #000000; /* JBU Black */
         """)
-        
-        self.main_v_layout.addWidget(self.title_label, 0)
+        # The '1' here is a stretch factor, forcing the text to push the logos to the edges
+        self.title_h_layout.addWidget(self.title_label, 1) 
 
-        self.main_h_layout = QHBoxLayout() 
-        self.main_h_layout.setSpacing(10) 
+        # 5. Setup Right Logo
+        self.right_logo = QLabel()
+        right_pixmap = QPixmap("jbu_logo_cansat.png").scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.right_logo.setPixmap(right_pixmap)
+        self.title_h_layout.addWidget(self.right_logo)
+
+        # 6. Add the completely assembled container to the main vertical layout
+        self.main_v_layout.addWidget(self.title_bar_container, 0)
+        
+        # Re-initialize the main horizontal layout that holds the graphs and terminal
+        self.main_h_layout = QHBoxLayout()
+        self.main_h_layout.setSpacing(10)
         self.main_v_layout.addLayout(self.main_h_layout, 1)
 
         """
@@ -175,11 +205,11 @@ class GUIThread(QMainWindow):
         
         # BUTTONS START HERE
         self.button_h_layout = QHBoxLayout() 
-        self.button_h_layout.setSpacing(20) 
+        self.button_h_layout.setSpacing(10) 
 
         # --- MISSION STATUS INDICATOR (Left Side) ---
         self.phase_v_layout = QVBoxLayout()
-        self.phase_v_layout.setSpacing(5)
+        self.phase_v_layout.setSpacing(10)
         
         # --- MISSION STATE VARIABLES ---
         self.max_altitude = 0.0
