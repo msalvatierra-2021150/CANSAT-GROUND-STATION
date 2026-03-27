@@ -65,7 +65,7 @@ class GUIThread(QMainWindow):
         self.main_v_layout.addWidget(self.title_label, 0)
 
         self.main_h_layout = QHBoxLayout() 
-        self.main_h_layout.setSpacing(40) 
+        self.main_h_layout.setSpacing(10) 
         self.main_v_layout.addLayout(self.main_h_layout, 1)
 
         """
