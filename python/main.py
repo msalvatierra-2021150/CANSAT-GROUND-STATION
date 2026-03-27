@@ -104,10 +104,10 @@ class GUIThread(QMainWindow):
 
         self.data_x = []  
         self.data_y = []         
-        self.line = self.line_graph1.plot(self.data_x, self.data_y, pen=pg.mkPen(color='#0056B3', width=2.5), name="Temperature")
+        self.line = self.line_graph1.plot(self.data_x, self.data_y, pen=pg.mkPen(color='#D32F2F', width=2.5), name="Temperature")
         
         self.data_press = []
-        self.line_press = pg.PlotCurveItem(self.data_x, self.data_press, pen=pg.mkPen(color='#FF8C00', width=2.5))
+        self.line_press = pg.PlotCurveItem(self.data_x, self.data_press, pen=pg.mkPen(color='#7C3AED', width=2.5))
         self.p2.addItem(self.line_press)
         self.legend.addItem(self.line_press, "Pressure")
 
@@ -150,8 +150,8 @@ class GUIThread(QMainWindow):
         self.data_y2 = []  # Altitude
         self.data_vel = [] # Velocity
         
-        self.line2 = self.p3.plot(self.data_x, self.data_y2, pen=pg.mkPen(color='#0056B3', width=2.5), name="Altitude")
-        self.line_vel = pg.PlotCurveItem(self.data_x, self.data_vel, pen=pg.mkPen(color='#FF8C00', width=2.5))
+        self.line2 = self.p3.plot(self.data_x, self.data_y2, pen=pg.mkPen(color='#2563EB', width=2.5), name="Altitude")
+        self.line_vel = pg.PlotCurveItem(self.data_x, self.data_vel, pen=pg.mkPen(color='#22C55E', width=2.5))
         self.p4.addItem(self.line_vel)
         self.legend2.addItem(self.line_vel, "Descent Velocity")
 
@@ -193,7 +193,7 @@ class GUIThread(QMainWindow):
 
         self.phase1_label = QLabel("Mission Phase: Drone Ascent")
         self.phase2_label = QLabel("Last Rx: 0s")
-        self.phase3_label = QLabel("Camera waiting")
+        self.phase3_label = QLabel("Camera: Waiting")
         self.phase4_label = QLabel("Mission in Progress")
 
         # Styling to make them look like indicator bars
@@ -273,7 +273,7 @@ class GUIThread(QMainWindow):
         """Displays a pop-up dialog with the image sent from the processor thread"""
         
         # --- UPDATE PHASE 3 INDICATOR ---
-        self.phase3_label.setText("Camera Done")
+        self.phase3_label.setText("Camera: Image Received")
         self.phase3_label.setStyleSheet("""
             background-color: #28A745; /* Success Green */
             color: #FFFFFF; 
